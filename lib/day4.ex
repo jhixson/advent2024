@@ -9,9 +9,15 @@ defmodule Advent2024.Day4 do
   defp read_puzzle(device, row, puzzle_coords) do
     case IO.read(device, :line) do
       :eof ->
+        # Part 1
+        # puzzle_coords
+        # |> find_starting_letter("X")
+        # |> find_words(puzzle_coords)
+
+        # Part 2
         puzzle_coords
-        |> find_x()
-        |> find_words(puzzle_coords)
+        |> find_starting_letter("A")
+        |> find_crosses(puzzle_coords)
 
       line ->
         coords = build_coords(line, row)
@@ -28,11 +34,12 @@ defmodule Advent2024.Day4 do
     |> Map.new()
   end
 
-  defp find_x(puzzle) do
+  defp find_starting_letter(puzzle, starting_letter) do
     puzzle
-    |> Enum.filter(fn {_k, letter} -> letter == "X" end)
+    |> Enum.filter(fn {_k, letter} -> letter == starting_letter end)
   end
 
+  # Part 1
   defp find_words(x_marks, puzzle) do
     moves = [
       {1, 0},
@@ -48,14 +55,29 @@ defmodule Advent2024.Day4 do
     Enum.map(x_marks, fn point ->
       {{x, y}, "X"} = point
 
-      # IO.inspect("checking #{x}, #{y}")
-
       Enum.reduce(moves, [], fn move, acc ->
         [check_move(puzzle, {x, y}, move, ~w(M A S)) | acc]
       end)
     end)
     |> List.flatten()
-    |> Enum.count(& &1 == true)
+    |> Enum.count(&(&1 == true))
+  end
+
+  # Part 2
+  defp find_crosses(a_marks, puzzle) do
+    Enum.map(a_marks, fn {{x, y}, "A"} = _point ->
+      north_west = Map.get(puzzle, {x - 1, y - 1})
+      north_east = Map.get(puzzle, {x + 1, y - 1})
+      south_west = Map.get(puzzle, {x - 1, y + 1})
+      south_east = Map.get(puzzle, {x + 1, y + 1})
+
+      (north_east == "M" and north_west == "M" and south_east == "S" and south_west == "S") or
+        (north_east == "S" and north_west == "S" and south_east == "M" and south_west == "M") or
+        (north_east == "S" and north_west == "M" and south_east == "S" and south_west == "M") or
+        (north_east == "M" and north_west == "S" and south_east == "M" and south_west == "S")
+    end)
+    |> List.flatten()
+    |> Enum.count(&(&1 == true))
   end
 
   def check_move(_puzzle, _start, _move, []), do: true
